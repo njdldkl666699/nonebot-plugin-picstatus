@@ -28,11 +28,10 @@ from pydantic import BaseModel
 
 require("nonebot_plugin_htmlrender")
 
-from nonebot_plugin_htmlrender import get_new_page
+from nonebot_plugin_htmlrender import get_default_application
 
 if TYPE_CHECKING:
     from nonebot_plugin_picstatus.bg_provider import BgBytesData
-    from playwright.async_api import Page
 
 RES_DIR = Path(__file__).parent / "res"
 
@@ -88,9 +87,10 @@ async def example_template(collected: dict[str, Any], bg: "BgBytesData", **_):
     add_root_router(router_group, html)  # 注册根路由，访问返回渲好的 html
     add_background_router(router_group, bg)  # 注册背景图片路由
 
-    async with get_new_page() as page:
-        if TYPE_CHECKING:  # htmlrender v0.7 get_new_page returns type object
-            assert isinstance(page, Page)
+    app = get_default_application()
+    async with app.extensions.playwright.page(
+        device_scale_factor=2,
+    ) as page:
         await router_group.apply(page)
         await page.goto(f"{ROUTE_URL}/", wait_until="load")
         elem = await page.wait_for_selector("main")
